@@ -34,6 +34,18 @@ public:
   Database(){}
   OrderID create(Side, Dealer, Commodity, int amount, double price);
   Record& getByID(OrderID);
+  // itterates over each record that passes Pred and calls Func
+  template<typename Pred, typename Func>
+  void itterate(Pred p, Func f)
+  {
+    OrderID id = 1;
+    for(const auto& r:this->data)
+    {
+      if(p(r)) f(id, r);
+      id++;
+    }
+  }
+  bool containsOrder(OrderID);
 };
 
 #endif

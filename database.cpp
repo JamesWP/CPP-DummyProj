@@ -44,6 +44,10 @@ OrderID Database::create(Side s, Dealer d, Commodity c, int amount, double price
 
 Record& Database::getByID(OrderID id)
 {
-  //assert(id<=this->data.size());
   return this->data[id-1];
+}
+
+bool Database::containsOrder(OrderID id)
+{
+  return this->data.size()>=id && id > 0;
 }
