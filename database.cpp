@@ -38,5 +38,12 @@ std::ostream& operator<<(std::ostream& os, const Commodity& c)
 
 OrderID Database::create(Side s, Dealer d, Commodity c, int amount, double price)
 {
-  return 1;
+  this->data.push_back(Record{false,s,d,c,amount,price});
+  return (int)this->data.size();
+}
+
+Record& Database::getByID(OrderID id)
+{
+  //assert(id<=this->data.size());
+  return this->data[id-1];
 }

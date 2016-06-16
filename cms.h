@@ -29,7 +29,7 @@ public:
 
   CMSInterface():db{}{}
   CMSOutput post(Dealer, Side, Commodity, int, double);
-  CMSOutput revoke(OrderID);
+  CMSOutput revoke(Dealer, OrderID);
   CMSOutput check(OrderID);
   CMSOutput list(Commodity, Dealer);
   CMSOutput list(Commodity);
