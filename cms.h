@@ -4,6 +4,7 @@
 
 #include <vector>
 #include <iostream>
+#include <string>
 #include "database.h"
 
 
@@ -12,6 +13,7 @@ class CMSOutput
   std::string message;
 public:
   CMSOutput(std::string msg):message{msg}{}
+  CMSOutput():message{""}{}
   friend std::ostream& operator<<(std::ostream& os, const CMSOutput& o);
   static std::string OrderInfo(OrderID, Dealer, Side, Commodity, int, double);
   static std::string OrderInfo(OrderID, Record);

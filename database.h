@@ -5,9 +5,9 @@
 #include <vector>
 #include <iostream>
 
-enum Dealer {DB, JPM, UBS, RBC, BARX, MS, CITI, BOFA, RBS, HSBC};
-enum Side {Buy, Sell};
-enum Commodity {GOLD, SILV, PORK, OIL, RICE};
+enum Dealer {DB, JPM, UBS, RBC, BARX, MS, CITI, BOFA, RBS, HSBC, UNKNOWN_DEALER};
+enum Side {Buy, Sell, UNKNOWN_SIDE};
+enum Commodity {GOLD, SILV, PORK, OIL, RICE, UNKNOWN_COMMODITY};
 
 // NB order id relates to the order in the database
 // data[OrderID-1] is the order represented by OrderID
@@ -46,6 +46,9 @@ public:
     }
   }
   bool containsOrder(OrderID);
+  static Dealer parseDealer(std::string);
+  static Side parseSide(std::string);
+  static Commodity parseCommodity(std::string);
 };
 
 #endif
