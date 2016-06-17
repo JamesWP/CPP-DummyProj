@@ -236,7 +236,7 @@ int main(int argc, char* argv[])
           std::cout << o << std::endl;
         }else std::cout << CMSOutput("INVALID_MESSAGE") << std::endl;
       }else std::cout << CMSOutput("UNKNOWN_DEALER") << std::endl;
-    }else std::cout << CMSOutput("INVALID_MESSAGE") << std::endl;
+    }
 
   }
 
