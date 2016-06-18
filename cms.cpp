@@ -134,6 +134,12 @@ std::string CMSOutput::OrderInfo(OrderID id, Record r)
   return CMSOutput::OrderInfo(id, r.d, r.s, r.c, r.amount, r.price);
 }
 
+/**
+ * parse(Post|Revoke|Check|List|Aggress) methods
+ * each takes the interface to act upon, the dealer(if required), and the
+ * string stream to take remaining input from
+ */
+
 CMSOutput parsePost(CMSInterface& i, Dealer d, std::stringstream& ss)
 {
   std::string sideStr;
@@ -180,12 +186,12 @@ CMSOutput parseCheck(CMSInterface& i, Dealer d, std::stringstream& ss)
 CMSOutput parseList(CMSInterface& i, std::stringstream& ss)
 {
   std::string commStr;
-  std::string dealerStr;
   if(!(ss >> commStr))
     return i.list();
   Commodity c = Database::parseCommodity(commStr);
   if(c==UNKNOWN_COMMODITY)
     return CMSOutput("UNKNOWN_COMMODITY");
+  std::string dealerStr;
   if(!(ss >> dealerStr))
     return i.list(c);
   Dealer d = Database::parseDealer(dealerStr);
@@ -208,36 +214,44 @@ CMSOutput parseAggress(CMSInterface& i, Dealer d, std::stringstream& ss)
   return i.aggress(details);
 }
 
+/**
+ * parseInput
+ * top level parse function, takes a command string and computes the output
+ */
+CMSOutput parseInput(CMSInterface& i, std::string input)
+{
+  std::stringstream linestr{input};
+  std::string dealer;
+
+  if(!(linestr >> dealer)) return CMSOutput();
+
+  Dealer d = Database::parseDealer(dealer);
+  if(d==UNKNOWN_DEALER)
+    return CMSOutput("UNKNOWN_DEALER");
+
+  std::string command;
+  if(!(linestr >> command))
+    return CMSOutput("INVALID_MESSAGE");
+
+  /**/ if(command=="POST")      return parsePost(i, d, linestr);
+  else if(command=="REVOKE")    return parseRevoke(i, d, linestr);
+  else if(command=="CHECK")     return parseCheck(i, d, linestr);
+  else if(command=="LIST")      return parseList(i, linestr);
+  else if(command=="AGGRESS")   return parseAggress(i, d, linestr);
+  else return CMSOutput("INVALID_MESSAGE");
+}
+
+
 int main(int argc, char* argv[])
 {
   CMSInterface i;
 
-  std::string   line;
-  while(std::getline(std::cin,line))
+  std::string line;
+  while(std::getline(std::cin, line))
   {
-    std::stringstream linestr{line};
-    std::string dealer;
-    Dealer d;
-    if(linestr >> dealer)
-    {
-      if((d = Database::parseDealer(dealer))!=UNKNOWN_DEALER)
-      {
-        std::string command;
-        if(linestr >> command)
-        {
-          CMSOutput o;
-          /**/ if(command=="POST")      o = parsePost(i, d, linestr);
-          else if(command=="REVOKE")    o = parseRevoke(i, d, linestr);
-          else if(command=="CHECK")     o = parseCheck(i, d, linestr);
-          else if(command=="LIST")      o = parseList(i, linestr);
-          else if(command=="AGGRESS")   o = parseAggress(i, d, linestr);
-          else std::cout << CMSOutput("INVALID_MESSAGE") << std::endl;
-
-          std::cout << o << std::endl;
-        }else std::cout << CMSOutput("INVALID_MESSAGE") << std::endl;
-      }else std::cout << CMSOutput("UNKNOWN_DEALER") << std::endl;
-    }
-
+    auto o = parseInput(i, line);
+    if(o.hasMessage())
+      std::cout << o << std::endl;
   }
 
   return 0;

@@ -5,3 +5,5 @@ cms: cms.cpp database.cpp cms.h database.h
 test: cms
 	./cms < input1.testin > input1.testout.test
 	diff input1.testout input1.testout.test
+	./cms < input2.testin > input2.testout.test
+	diff input2.testout input2.testout.test

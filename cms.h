@@ -11,9 +11,11 @@
 class CMSOutput
 {
   std::string message;
+  bool _hasMessage;
 public:
-  CMSOutput(std::string msg):message{msg}{}
-  CMSOutput():message{""}{}
+  CMSOutput(std::string msg):message{msg},_hasMessage{true}{}
+  CMSOutput():message{""},_hasMessage{false}{}
+  bool hasMessage(){return _hasMessage; }
   friend std::ostream& operator<<(std::ostream& os, const CMSOutput& o);
   static std::string OrderInfo(OrderID, Dealer, Side, Commodity, int, double);
   static std::string OrderInfo(OrderID, Record);
