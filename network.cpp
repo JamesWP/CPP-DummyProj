@@ -65,7 +65,6 @@ void NetworkInterface::acceptConn()
 
 void NetworkInterface::sendStr(std::string str)
 {
-  // This send() function sends the 13 bytes of the string to the new socket
   send(newsockfd, str.c_str(), str.size(), 0);
   send(newsockfd, "\n", 1, 0);
 }

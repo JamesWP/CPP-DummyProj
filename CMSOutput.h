@@ -14,6 +14,11 @@
 #include "database.h"
 #include "strings.h"
 
+/**
+ * represents the output from a command
+ * this abstract class is implemented below in the derived subclasses
+ * each must implement hasMessage and getMessage
+ */
 class CMSOutput
 {
 public:

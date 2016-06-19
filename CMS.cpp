@@ -106,132 +106,8 @@ CMSOutput* CMSInterface::outputList(Pred p)
 }
 
 /**
- * OrderInfo
- * creates a string to represent the order
+ * reads lines form stdin and writes the results to stdout
  */
-std::string CMSOutput::OrderInfo(OrderID id, Dealer d, Side s, Commodity c, int amount, double price)
-{
-  std::stringstream ss;
-  ss << id << " " << d << " " << s << " " << c << " " << amount << " " << price;
-  return ss.str();
-}
-
-/**
- * OrderInfo
- * creates a string to represent the order in record form
- */
-std::string CMSOutput::OrderInfo(OrderID id, Record r)
-{
-  return CMSOutput::OrderInfo(id, r.d, r.s, r.c, r.amount, r.price);
-}
-
-/**
- * parse(Post|Revoke|Check|List|Aggress) methods
- * each takes the interface to act upon, the dealer(if required), and the
- * string stream to take remaining input from
- */
-
-CMSOutput* parsePost(CMSInterface& i, Dealer d, std::stringstream& ss)
-{
-  std::string sideStr;
-  std::string commStr;
-  int amount;
-  double price;
-  Side s;
-  Commodity c;
-
-  if(!(ss >> sideStr >> commStr >> amount >> price))
-    return new CMSOutputInvalidMessage();
-
-  s = Database::parseSide(sideStr);
-  c = Database::parseCommodity(commStr);
-
-  if(s==Side::UNKNOWN_SIDE)
-    return new CMSOutputInvalidMessage();
-  if(c==Commodity::UNKNOWN_COMMODITY)
-    return new CMSOutputUnknownCommodity();
-
-  return i.post(d, s, c, amount, price);
-}
-
-CMSOutput* parseRevoke(CMSInterface& i, Dealer d, std::stringstream& ss)
-{
-  OrderID id;
-
-  if(!(ss >> id))
-    return new CMSOutputInvalidMessage();
-
-  return i.revoke(d, id);
-}
-
-CMSOutput* parseCheck(CMSInterface& i, Dealer d, std::stringstream& ss)
-{
-  OrderID id;
-
-  if(!(ss >> id))
-    return new CMSOutputInvalidMessage();
-
-  return i.check(d, id);
-}
-
-CMSOutput* parseList(CMSInterface& i, std::stringstream& ss)
-{
-  std::string commStr;
-  if(!(ss >> commStr))
-    return i.list();
-  Commodity c = Database::parseCommodity(commStr);
-  if(c==UNKNOWN_COMMODITY)
-    return new CMSOutputUnknownCommodity();
-  std::string dealerStr;
-  if(!(ss >> dealerStr))
-    return i.list(c);
-  Dealer d = Database::parseDealer(dealerStr);
-  if(d==UNKNOWN_DEALER)
-    return new CMSOutputUnknownDealer();
-  return i.list(c, d);
-}
-
-CMSOutput* parseAggress(CMSInterface& i, Dealer d, std::stringstream& ss)
-{
-  std::vector<AggressDetails> details;
-  OrderID id;
-  int amount;
-  while(ss >> id >> amount)
-  {
-    details.push_back({id, amount});
-  }
-  if(details.size()==0)
-    return new CMSOutputInvalidMessage();
-  return i.aggress(details);
-}
-
-/**
- * parseInput
- * top level parse function, takes a command string and computes the output
- */
-CMSOutput* parseInput(CMSInterface& i, std::string input)
-{
-  std::stringstream linestr{input};
-  std::string dealer;
-
-  if(!(linestr >> dealer)) return new CMSOutputNone();
-
-  Dealer d = Database::parseDealer(dealer);
-  if(d==UNKNOWN_DEALER)
-    return new CMSOutputUnknownDealer();
-
-  std::string command;
-  if(!(linestr >> command))
-    return new CMSOutputInvalidMessage();
-
-  /**/ if(command=="POST")      return parsePost(i, d, linestr);
-  else if(command=="REVOKE")    return parseRevoke(i, d, linestr);
-  else if(command=="CHECK")     return parseCheck(i, d, linestr);
-  else if(command=="LIST")      return parseList(i, linestr);
-  else if(command=="AGGRESS")   return parseAggress(i, d, linestr);
-  else return new CMSOutputInvalidMessage();
-}
-
 void commandLineInterface()
 {
   CMSInterface i;
@@ -239,13 +115,18 @@ void commandLineInterface()
   std::string line;
   while(std::getline(std::cin, line))
   {
-    auto o = parseInput(i, line);
+    auto o = CMSInput::parseInput(i, line);
     if(o->hasMessage())
       std::cout << *o << std::endl;
     delete o;
   }
 }
 
+/**
+ * binds to a socket on port and accepts a single client
+ * input is read from the client (\n terminated string)
+ * output is writen to the socket
+ */
 void singleNetworkInterface(char* port)
 {
   CMSInterface i;
@@ -256,7 +137,7 @@ void singleNetworkInterface(char* port)
 
   while(!ni.closed())
   {
-    auto o = parseInput(i, ni.readStr());
+    auto o = CMSInput::parseInput(i, ni.readStr());
     if(o->hasMessage())
       ni.sendStr(o->getMessage());
     delete o;
@@ -265,8 +146,18 @@ void singleNetworkInterface(char* port)
 
 int main(int argc, char* argv[])
 {
+  if(argc<2)
+  {
+    std::cout << "cms [\"base\"|\"ext1\" <port>|\"ext2\" <port>]" << std::endl;
+    exit(1);
+  }
+  std::string mode{argv[1]};
 
-  //commandLineInterface();
-  singleNetworkInterface(argv[1]);
+  /**/ if(mode.compare("base")==0)
+    commandLineInterface();
+  else if(mode.compare("ext1")==0 && argc > 2)
+    singleNetworkInterface(argv[2]);
+  else if(mode.compare("ext2")==0 && argc > 2)
+    exit(2); // not yet implemented
   return 0;
 }

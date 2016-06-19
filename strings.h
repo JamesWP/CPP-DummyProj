@@ -18,5 +18,8 @@ static const std::string MSG_STR_REVOKED = " HAS BEEN REVOKED";
 static const std::string MSG_STR_FILLED = " HAS BEEN FILLED";
 static const std::string MSG_STR_POSTED = " HAS BEEN POSTED";
 static const std::string MSG_STR_EOL = "END OF LIST";
+static const std::string MSG_STR_SOLD = "SOLD ";
+static const std::string MSG_STR_BOUGHT = "BOUGHT ";
+static const std::string MSG_STR_FROM = " FROM ";
 
 #endif /* strings_h */

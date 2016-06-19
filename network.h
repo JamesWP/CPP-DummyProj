@@ -23,6 +23,10 @@
 #include <sstream>
 #include <iostream>
 
+/**
+ * provides access to network input output
+ * wraps native c socket api with a c++ class
+ */
 class NetworkInterface
 {
   int sockfd, newsockfd, portno;
