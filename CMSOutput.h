@@ -1,13 +1,18 @@
+//
+//  CMSOutput.hpp
+//  CMS
+//
+//  Created by James Peach on 19/06/2016.
+//  Copyright © 2016 James Peach. All rights reserved.
+//
 
-#ifndef CMS_H
-#define CMS_H
+#ifndef CMSOutput_hpp
+#define CMSOutput_hpp
 
-#include <vector>
 #include <iostream>
-#include <string>
+#include <sstream>
 #include "database.h"
 #include "strings.h"
-
 
 class CMSOutput
 {
@@ -96,42 +101,54 @@ public:
   const std::string getMessage() const {return std::to_string(id) + MSG_STR_FILLED;}
 };
 
-class CMSOutputTransition: public CMSOutput
+class CMSOutputPosted: public CMSOutput
 {
-  std::string message;
-  bool _hasMessage;
-public:
-  CMSOutputTransition(std::string msg):message{msg},_hasMessage{true}{}
-  bool hasMessage(){ return _hasMessage;}
-  const std::string getMessage() const {return message;}
-};
-
-struct AggressDetails
-{
-  OrderID id; 
+  OrderID id;
+  Dealer d;
+  Side s;
+  Commodity c;
   int amount;
-};
-
-class CMSInterface
-{
-  Database db;
+  double price;
 public:
-
-  CMSInterface():db{}{}
-  CMSOutput* post(Dealer, Side, Commodity, int, double);
-  CMSOutput* revoke(Dealer, OrderID);
-  CMSOutput* check(Dealer, OrderID);
-  CMSOutput* list(Commodity, Dealer);
-  CMSOutput* list(Commodity);
-  CMSOutput* list();
-  CMSOutput* aggress(std::vector<AggressDetails>);
-
-  // Helper functions
-private:
-  CMSOutput* validateOrder(Dealer d, OrderID id, std::function<CMSOutput*(Record&)> cont);
-  template<class Pred>
-  CMSOutput* outputList(Pred);
+  CMSOutputPosted(OrderID id, Dealer d, Side s, Commodity c, int amount, double price)
+  :id{id},d{d},s{s},c{c},amount{amount},price{price}{}
+  bool hasMessage(){return true;}
+  const std::string getMessage() const {return CMSOutput::OrderInfo(id, d, s, c, amount, price) + MSG_STR_POSTED;}
 };
 
+class CMSOutputOrderDetails: public CMSOutput
+{
+  std::stringstream ss;
+  bool empty;
+public:
+  CMSOutputOrderDetails():empty{true}{}
+  bool hasMessage(){return true;}
+  const std::string getMessage() const { return ss.str();}
 
-#endif
+  void addOrderDetail(Side s,int amount, Commodity c, double price, Dealer d);
+};
+
+class CMSOutputOrderList: public CMSOutput
+{
+  std::stringstream ss;
+public:
+  CMSOutputOrderList(){}
+  bool hasMessage(){return true;}
+  const std::string getMessage() const { return ss.str() + MSG_STR_EOL; }
+
+  void addOrder(OrderID id, const Record& r)
+  { ss << CMSOutput::OrderInfo(id, r) << '\n'; }
+
+};
+
+class CMSOutputOrderCheck: public CMSOutput
+{
+  OrderID id;
+  const Record& r;
+public:
+  CMSOutputOrderCheck(OrderID id, const Record& r):id{id},r{r}{}
+  bool hasMessage(){return true;}
+  const std::string getMessage() const {return CMSOutput::OrderInfo(id,r); }
+};
+
+#endif /* CMSOutput_hpp */

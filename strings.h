@@ -16,5 +16,7 @@ static const std::string ERR_STR_UNKNOWN_COMMODITY = "UNKNOWN_COMMODITY";
 static const std::string ERR_STR_UNKNOWN_ORDER = "UNKNOWN_ORDER";
 static const std::string MSG_STR_REVOKED = " HAS BEEN REVOKED";
 static const std::string MSG_STR_FILLED = " HAS BEEN FILLED";
+static const std::string MSG_STR_POSTED = " HAS BEEN POSTED";
+static const std::string MSG_STR_EOL = "END OF LIST";
 
 #endif /* strings_h */

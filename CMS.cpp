@@ -1,9 +1,6 @@
 
 
-#include "cms.h"
-#include <iostream>
-#include <sstream>
-#include <string>
+#include "CMS.h"
 
 std::ostream& operator<<(std::ostream& os, const CMSOutput& o)
 {
@@ -14,7 +11,7 @@ std::ostream& operator<<(std::ostream& os, const CMSOutput& o)
 CMSOutput* CMSInterface::post(Dealer d, Side s, Commodity c, int amount, double price)
 {
   OrderID id = this->db.create(s, d, c, amount, price);
-  return new CMSOutputTransition(CMSOutput::OrderInfo(id, d, s, c, amount, price) + " HAS BEEN POSTED");
+  return new CMSOutputPosted(id, d, s, c, amount, price);
 }
 
 CMSOutput* CMSInterface::revoke(Dealer d, OrderID id)
@@ -30,7 +27,7 @@ CMSOutput* CMSInterface::check(Dealer d, OrderID id)
   return validateOrder(d, id, [&](Record& r) -> CMSOutput* {
     if(r.amount>0)
     {
-      return new CMSOutputTransition(CMSOutput::OrderInfo(id, r));
+      return new CMSOutputOrderCheck(id, r);
     }else return new CMSOutputOrderFilled(id);
   });
 }
@@ -64,18 +61,15 @@ CMSOutput* CMSInterface::aggress(std::vector<AggressDetails> details)
     if(this->db.getByID(detail.id).amount<detail.amount)
       return new CMSOutputUnknownOrder();
   }
+  CMSOutputOrderDetails* o = new CMSOutputOrderDetails();
   // trade can be made successfully
-  std::stringstream ss;
-  bool first = true;
   for(const auto& detail:details)
   {
     Record& r = db.getByID(detail.id);
     r.amount-=detail.amount;
-    if(first)first = false;
-    else ss << '\n';
-    ss << (r.s==Side::Buy?"SOLD ":"BOUGHT ") << detail.amount << " " << r.c << " @ " << r.price << " FROM " << r.d;
+    o->addOrderDetail(r.s,detail.amount,r.c,r.price,r.d);
   }
-  return new CMSOutputTransition(ss.str());
+  return o;
 }
 
 /**
@@ -103,15 +97,12 @@ CMSOutput* CMSInterface::validateOrder(Dealer d, OrderID id, std::function<CMSOu
 template<class Pred>
 CMSOutput* CMSInterface::outputList(Pred p)
 {
-  std::stringstream ss;
-
-  auto output = [&](OrderID id, const Record& r){ ss << CMSOutput::OrderInfo(id, r) << '\n'; };
+  CMSOutputOrderList* ol = new CMSOutputOrderList();
+  auto output = [&](OrderID id, const Record& r){ ol->addOrder(id, r); };
 
   this->db.itterate(p, output);
 
-  ss << "END OF LIST";
-
-  return new CMSOutputTransition(ss.str());
+  return ol;
 }
 
 /**
@@ -241,7 +232,7 @@ CMSOutput* parseInput(CMSInterface& i, std::string input)
   else return new CMSOutputInvalidMessage();
 }
 
-int main(int argc, char* argv[])
+void commandLineInterface()
 {
   CMSInterface i;
 
@@ -253,6 +244,29 @@ int main(int argc, char* argv[])
       std::cout << *o << std::endl;
     delete o;
   }
+}
 
+void singleNetworkInterface(char* port)
+{
+  CMSInterface i;
+  NetworkInterface ni(std::atoi(port));
+
+  ni.setup();
+  ni.acceptConn();
+
+  while(!ni.closed())
+  {
+    auto o = parseInput(i, ni.readStr());
+    if(o->hasMessage())
+      ni.sendStr(o->getMessage());
+    delete o;
+  }
+}
+
+int main(int argc, char* argv[])
+{
+
+  //commandLineInterface();
+  singleNetworkInterface(argv[1]);
   return 0;
 }
