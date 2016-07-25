@@ -136,12 +136,12 @@ void singleNetworkInterface(char* port)
   ni.acceptConn();
 
   while(!ni.closed())
-  {
-    auto o = CMSInput::parseInput(i, ni.readStr());
-    if(o->hasMessage())
-      ni.sendStr(o->getMessage());
-    delete o;
-  }
+    ni.processInput([&](std::string str){
+      auto o = CMSInput::parseInput(i, str);
+      if(o->hasMessage())
+        ni.sendStr(o->getMessage());
+      delete o;
+    });
 }
 
 int main(int argc, char* argv[])

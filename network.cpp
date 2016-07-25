@@ -68,24 +68,3 @@ void NetworkInterface::sendStr(std::string str)
   send(newsockfd, str.c_str(), str.size(), 0);
   send(newsockfd, "\n", 1, 0);
 }
-
-/**
- * read a newline terminated string from the socket
- * not the most efficant way to do this, but simple nontheless
- */
-std::string NetworkInterface::readStr()
-{
-  std::stringstream ss;
-  char ch = 0;
-  while(ch==0 || ch!='\n')
-  {
-    n = read(newsockfd,&ch,1);
-    if(n==0)
-    {
-      _closed = true;
-      return "";
-    }
-    ss << ch;
-  }
-  return ss.str();
-}
